@@ -1,5 +1,9 @@
 .vscode/
 target/
 canonical/
+logs/
+*.log
 *.py
 *[doc]*.md
+*.md
+*.sql

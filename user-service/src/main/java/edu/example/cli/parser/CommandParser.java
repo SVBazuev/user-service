@@ -5,7 +5,8 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Function;
 
-
+import edu.example.core.dto.DTO;
+import edu.example.core.dto.UserMapper;
 import edu.example.core.dto.UserRequest;
 
 
@@ -37,11 +38,12 @@ public class CommandParser {
             );
         }
         String[] args = Arrays.copyOfRange(tokens, 1, len);
+        DTO<UserRequest> dto = null;
         UserRequest request = new UserRequest();
 
         if (--len == 0
                 && Set.of("exit", "help", "read").contains(commandName)) {
-            // Скипнули...
+            dto = DTO.error("Continue", 100);
         } else if (len == 0) {
             throw new IllegalArgumentException(
                 "Для команд: \"create\", \"update\" и \"delete\" "
@@ -49,7 +51,7 @@ public class CommandParser {
             );
         } else if (len == 1 && !args[0].contains("=")
                 && Set.of("help", "read", "delete").contains(commandName)) {
-            parsePositional(commandName, args[0], request, len);
+            dto = parsePositional(commandName, args[0], request);
         } else {
             boolean positionalAllowed = true;
             for (int i = 0; i < len; i++) {
@@ -69,9 +71,10 @@ public class CommandParser {
                     // parsePositional(commandName, arg, request, i, len);
                 }
             }
+            dto = DTO.success(request);
         }
 
-        return new ParsedCommand(commandName, request);
+        return new ParsedCommand(commandName, dto);
     }
 
     private String[] splitCommandLine(String input) {
@@ -128,35 +131,38 @@ public class CommandParser {
         }
     }
 
-    private void parsePositional(
-    String commandName, String arg, UserRequest req, int i, int len)
+    private DTO<UserRequest> parsePositional(
+    String commandName, String arg, UserRequest req, int i)
     throws
     IllegalArgumentException {
         boolean isNumeric = arg != null && arg.matches("^-?\\d+$");
-        if (len == 1) {
-            if (isNumeric
+        if (isNumeric
                 && Set.of("delete", "read").contains(commandName)) {
-                Long id = parseNumbers(
-                    arg.trim(), Long::parseLong,
-                    "id", Long.class
-                );
-                req.setId(id);
-            } else if (!isNumeric && commandName.equals("help")){
-                req.setName(arg);
-            }
+            Long id = parseNumbers(
+                arg.trim(), Long::parseLong,
+                "id", Long.class
+            );
+            req.setId(id);
+        } else if (!isNumeric && commandName.equals("help")){
+            // pass
         } else {
+            //TODO Реализовать обработку нескольких аргументов.
             throw new IllegalArgumentException(
-                "Введён некорректный аргумент: "
-                + arg
+                "Обработка несколький позиционных аргументов не реализована."
             );
         }
+
+        if (req.isEmpty()) {
+            return DTO.<UserRequest>error(arg, 100);
+        }
+        return DTO.success(req);
     }
 
-    private void parsePositional(
-    String commandName, String arg, UserRequest req, int len)
+    private DTO<UserRequest> parsePositional(
+    String commandName, String arg, UserRequest req)
     throws
     IllegalArgumentException {
-        parsePositional(commandName, arg, req, -1, len);
+        return parsePositional(commandName, arg, req, -1);
     }
 
     private <T extends Number> T parseNumbers(

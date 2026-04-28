@@ -1,0 +1,45 @@
+<configuration>
+    <!-- Уровень по умолчанию (можно переопределить через -DLOG_LEVEL=DEBUG) -->
+    <property name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}" />
+
+    <!-- ===== Appender для основного файла (с ротацией по дням) ===== -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/user-service.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/user-service-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ===== Appender для SQL-логов (DEBUG и выше, ротация) ===== -->
+    <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/sql.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/sql-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ===== Логгер Hibernate SQL (уровень DEBUG) ===== -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="SQL_FILE"/>
+    </logger>
+
+    <!-- (Опционально) Логгер параметров запросов, раскомментировать при необходимости -->
+    <!--
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+        <appender-ref ref="SQL_FILE"/>
+    </logger>
+    -->
+
+    <!-- ===== Корневой логгер: только файл, консоль отсутствует ===== -->
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

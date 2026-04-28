@@ -7,6 +7,7 @@ import edu.example.cli.parser.ParsedCommand;
 import edu.example.cli.util.Printer;
 
 import edu.example.core.controller.UserController;
+import edu.example.core.dto.DTO;
 import edu.example.core.dto.UserRequest;
 // import edu.example.infrastructure.repository.HibernateUserRepository;
 import edu.example.infrastructure.util.HibernateUtil;
@@ -36,22 +37,17 @@ public class ConsoleApplication {
                 if (input.isEmpty()) continue;
 
                 ParsedCommand parsed = new ParsedCommand(
-                    "", new UserRequest()
+                    "", DTO.<UserRequest>error("Continue", 100)
                 );
                 try {
                     parsed = parser.parse(input);
                 } catch (IllegalArgumentException e) {
                     Printer.printError(e.getMessage());
-                    // e.printStackTrace();
                 }
 
                 Command command = registry.getCommand(parsed.name());
-                if (command == null) {
-                    Printer.printUnknownCommand(parsed.name());
-                    continue;
-                }
                 try {
-                    command.execute(parsed.request());
+                    command.execute(parsed.dto());
                 } catch (Exception e) {
                     Printer.printError(
                         "Ошибка выполнения команды: "
@@ -76,6 +72,8 @@ public class ConsoleApplication {
 
     private void printHelp() {
         Command help = registry.getCommand("help");
-        if (help != null) help.execute(new UserRequest());
+        if (help != null) {
+            help.execute(DTO.error("Continue", 100));
+        }
     }
 }

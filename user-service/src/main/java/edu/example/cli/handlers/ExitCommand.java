@@ -2,6 +2,7 @@ package edu.example.cli.handlers;
 
 
 import edu.example.cli.api.Command;
+import edu.example.core.dto.DTO;
 import edu.example.core.dto.UserRequest;
 
 
@@ -13,7 +14,7 @@ public class ExitCommand implements Command {
     }
 
     @Override
-    public void execute(UserRequest request) {
+    public void execute(DTO<UserRequest> request) {
         System.out.println("Выход из программы.");
         exitAction.run();
     }

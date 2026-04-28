@@ -1,6 +1,7 @@
 package edu.example.core.controller;
 
 
+import edu.example.core.dto.DTO;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
 import edu.example.core.service.UserService;
@@ -14,31 +15,23 @@ public class UserController {
         this.userService = userService;
     }
 
-    public UserResponse createUser(UserRequest request) {
-        return userService.create(request);
+    public DTO<UserResponse> createUser(DTO<UserRequest> dto) {
+        return userService.create(dto);
     }
 
-    public UserResponse getUser(Long id) {
-        return userService.getById(id);
+    public DTO<UserResponse> getUser(DTO<UserRequest> dto) {
+        return userService.getById(dto);
     }
 
-    public List<UserResponse> getAllUsers() {
+    public DTO<UserResponse> updateUser(DTO<UserRequest> dto) {
+        return userService.update(dto);
+    }
+
+    public DTO<List<UserResponse>> getAllUsers() {
         return userService.getAll();
     }
 
-    public UserResponse updateUser(UserRequest request) {
-        return userService.update(request);
-    }
-
-    public UserResponse updateUser(Long id, UserRequest request) {
-        return userService.update(id, request);
-    }
-
-    public void deleteUser(Long id) {
-        userService.delete(id);
-    }
-
-    public void deleteUser(UserRequest request) {
-        userService.delete(request.getId());
+    public DTO<Void> deleteUser(DTO<UserRequest> dto) {
+        return userService.delete(dto);
     }
 }

@@ -4,6 +4,7 @@ package edu.example.cli.handlers;
 import edu.example.cli.api.Command;
 import edu.example.cli.api.CommandRegistry;
 import edu.example.cli.util.Printer;
+import edu.example.core.dto.DTO;
 import edu.example.core.dto.UserRequest;
 
 
@@ -15,8 +16,8 @@ public class HelpCommand implements Command {
     }
 
     @Override
-    public void execute(UserRequest request) {
-        if (request.isEmpty()) {
+    public void execute(DTO<UserRequest> dto) {
+        if (!dto.isSuccess()) {
             System.out.println("\nДоступные команды:");
 
             registry.getCommandNames().stream()
@@ -36,16 +37,16 @@ public class HelpCommand implements Command {
         } else {
             try {
                 System.out.println(
-                    registry.getCommand(request.getName()).getDescription()
+                    registry.getCommand(dto.getData().getName()).getDescription()
                 );
             } catch (NullPointerException e) {
                 Printer.printError(
                     String.format(
                         "Передан некорректный аргумент: %s",
-                        request.getName()
+                        dto.getData().getName()
                     )
                 );
-                execute(new UserRequest());
+                execute(DTO.<UserRequest>error("Continue", 100));
             }
         }
     }
