@@ -7,7 +7,6 @@ import java.util.Optional;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.hibernate.exception.JDBCConnectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,22 +31,18 @@ public class HibernateUserRepository implements UserRepository {
 
     @Override
     public User save(User user) {
-        Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
-            tx = session.beginTransaction();
-            session.persist(user);
-            tx.commit();
+        try {
+            sessionFactory.getCurrentSession()
+                .persist(user);
             log.info("User saved: id={}", user.getId());
             return user;
         } catch (JDBCConnectionException e) {
-            if (tx != null) tx.rollback();
             log.error("Database connection error while saving user", e);
             throw new DatabaseConnectionException(
                 "Ошибка подключения к БД при сохранении",
                 e
             );
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
             log.error("Error saving user", e);
             throw new DataAccessException(
                 "Ошибка сохранения пользователя", e
@@ -57,8 +52,9 @@ public class HibernateUserRepository implements UserRepository {
 
     @Override
     public Optional<User> findById(Long id) {
-        try (Session session = sessionFactory.openSession()) {
-            User user = session.get(User.class, id);
+        try {
+            User user = sessionFactory.getCurrentSession()
+                .get(User.class, id);
             return Optional.ofNullable(user);
         } catch (JDBCConnectionException e) {
             throw new DatabaseConnectionException(
@@ -75,8 +71,10 @@ public class HibernateUserRepository implements UserRepository {
 
     @Override
     public List<User> findAll() {
-        try (Session session = sessionFactory.openSession()) {
-            return session.createQuery("from User", User.class).list();
+        try {
+            return sessionFactory.getCurrentSession()
+                .createQuery("from User", User.class)
+                .list();
         } catch (JDBCConnectionException e) {
             throw new DatabaseConnectionException(
                 "Ошибка подключения к БД при получении списка",
@@ -92,20 +90,16 @@ public class HibernateUserRepository implements UserRepository {
 
     @Override
     public void update(User user) {
-        Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
-            tx = session.beginTransaction();
-            session.merge(user);
-            tx.commit();
+        try {
+            sessionFactory.getCurrentSession()
+                .merge(user);
             log.info("User updated: id={}", user.getId());
         } catch (JDBCConnectionException e) {
-            if (tx != null) tx.rollback();
             throw new DatabaseConnectionException(
                 "Ошибка подключения к БД при обновлении",
                 e
             );
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
             throw new DataAccessException(
                 "Ошибка обновления пользователя id=" + user.getId(),
                 e
@@ -115,28 +109,23 @@ public class HibernateUserRepository implements UserRepository {
 
     @Override
     public void deleteById(Long id) {
-        Transaction tx = null;
-        try (Session session = sessionFactory.openSession()) {
-            tx = session.beginTransaction();
-            User user = session.get(User.class, id);
+        try {
+            User user = sessionFactory.getCurrentSession()
+                .get(User.class, id);
             if (user == null) {
                 throw new UserNotFoundException(id);
             }
-            session.remove(user);
-            tx.commit();
+            sessionFactory.getCurrentSession()
+                .remove(user);
             log.info("User deleted: id={}", id);
         } catch (UserNotFoundException e) {
-            // не оборачиваем, пробрасываем дальше
-            if (tx != null) tx.rollback();
             throw e;
         } catch (JDBCConnectionException e) {
-            if (tx != null) tx.rollback();
             throw new DatabaseConnectionException(
                 "Ошибка подключения к БД при удалении",
                 e
             );
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
             throw new DataAccessException(
                 "Ошибка удаления пользователя id=" + id,
                 e
@@ -146,11 +135,12 @@ public class HibernateUserRepository implements UserRepository {
 
     @Override
     public boolean existsById(Long id) {
-        try (Session session = sessionFactory.openSession()) {
-            Long count = session.createQuery(
+        try {
+            Long count = sessionFactory.getCurrentSession()
+                .createQuery(
                     "select count(*) from User where id = :id", Long.class)
-                    .setParameter("id", id)
-                    .uniqueResult();
+                .setParameter("id", id)
+                .uniqueResult();
             return count != null && count > 0;
         } catch (JDBCConnectionException e) {
             throw new DatabaseConnectionException(

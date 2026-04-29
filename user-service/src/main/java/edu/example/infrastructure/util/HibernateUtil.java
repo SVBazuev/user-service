@@ -22,8 +22,6 @@ public class HibernateUtil {
         try {
             Configuration configuration = new Configuration();
             configuration.configure("hibernate.cfg.xml");
-            // если нужно добавить аннотированный класс явно:
-            // configuration.addAnnotatedClass(edu.example.core.entity.User.class);
             SessionFactory sf = configuration.buildSessionFactory();
             log.info("SessionFactory successfully created");
             return sf;
