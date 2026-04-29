@@ -21,39 +21,45 @@ import edu.example.exception.UserNotFoundException;
 
 
 public class UserService {
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private static final Logger log = LoggerFactory.getLogger(
+        UserService.class
+    );
     private final UserRepository userRepository;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
-    private void validate(UserRequest request) {
-        if (request.getName() == null
-                || request.getName().isBlank()) {
+    private void validate(UserRequest request, boolean isUpdate) {
+    if (!isUpdate || request.getName() != null) {
+        if (request.getName() == null || request.getName().isBlank()) {
             throw new ValidationException("Имя не может быть пустым");
         }
+    }
+    if (!isUpdate || request.getEmail() != null) {
         if (request.getEmail() == null
                 || !request.getEmail().matches("^[^@]+@[^@]+\\.[^@]+$")) {
             throw new ValidationException(
                 "Некорректный email: " + request.getEmail()
             );
         }
-        if (request.getAge() == null
-                || request.getAge() < 0
-                    || request.getAge() > 150) {
+    }
+    if (request.getAge() != null) {
+        if (request.getAge() < 0 || request.getAge() > 150) {
             throw new ValidationException(
                 "Возраст должен быть от 0 до 150 (получено: "
-                + request.getAge() + ")"
+                + request.getAge()
+                + ")"
             );
         }
     }
+}
 
     public DTO<UserResponse> create(DTO<UserRequest> dto) {
         UserRequest request = dto.getData();
         log.info("Создание пользователя: email={}", request.getEmail());
         try {
-            validate(request);
+            validate(request, false);
             User user = UserMapper.toEntity(request);
             User saved = userRepository.save(user);
             log.info(
@@ -183,7 +189,7 @@ public class UserService {
     public DTO<UserResponse> update(Long id, UserRequest request) {
         log.info("Обновление пользователя id={}", id);
         try {
-            validate(request);
+            validate(request, true);
             User existing = userRepository.findById(id)
                     .orElseThrow(() -> new UserNotFoundException(id));
             UserMapper.updateEntity(existing, request);

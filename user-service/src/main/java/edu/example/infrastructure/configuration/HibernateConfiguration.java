@@ -25,7 +25,7 @@ public class HibernateConfiguration {
             )
             .setProperty(
                 "hibernate.connection.url",
-                "jdbc:postgresql://localhost:5433/postgres"
+                "jdbc:postgresql://localhost:5433/postgres?useUnicode=true&characterEncoding=UTF-8&charSet=utf8"
             )
             .setProperty(
                 "hibernate.connection.username",

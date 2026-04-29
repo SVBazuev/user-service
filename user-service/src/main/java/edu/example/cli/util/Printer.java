@@ -47,4 +47,8 @@ public class Printer {
     public static void printSuccess(String message) {
         System.out.println("[Успех] " + message);
     }
+
+    public static void printExit(String message) {
+        System.out.println(message);
+    }
 }
