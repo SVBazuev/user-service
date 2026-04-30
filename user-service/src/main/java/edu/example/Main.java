@@ -1,12 +1,9 @@
 package edu.example;
 
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 import edu.example.cli.ConsoleApplication;
 import edu.example.core.controller.UserController;

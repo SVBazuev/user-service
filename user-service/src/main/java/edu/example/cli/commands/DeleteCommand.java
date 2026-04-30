@@ -12,6 +12,7 @@ import edu.example.cli.picocli.CommandLine.Command;
 import edu.example.cli.picocli.CommandLine.Parameters;
 import edu.example.cli.util.Printer;
 
+
 @Command(name = "delete",
         description = "Удалить пользователя по ID")
 public class DeleteCommand implements Callable<Integer> {

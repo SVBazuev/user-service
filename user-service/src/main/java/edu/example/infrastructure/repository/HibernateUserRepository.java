@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.exception.JDBCConnectionException;
 import org.slf4j.Logger;
