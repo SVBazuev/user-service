@@ -4,13 +4,15 @@ package edu.example.cli.commands;
 import java.util.concurrent.Callable;
 
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+
 import edu.example.core.controller.UserController;
 import edu.example.core.dto.DTO;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
-import edu.example.cli.picocli.CommandLine.Command;
-import edu.example.cli.picocli.CommandLine.Option;
-import edu.example.cli.picocli.CommandLine.Parameters;
 import edu.example.cli.util.Printer;
 
 

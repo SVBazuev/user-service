@@ -4,10 +4,10 @@ package edu.example.cli.commands;
 import java.util.concurrent.Callable;
 
 
-import edu.example.cli.picocli.CommandLine;
-import edu.example.cli.picocli.CommandLine.Command;
-import edu.example.cli.picocli.CommandLine.Parameters;
-import edu.example.cli.picocli.CommandLine.Spec;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 
 @Command(name = "help",

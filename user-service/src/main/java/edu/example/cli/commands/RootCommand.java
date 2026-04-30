@@ -1,8 +1,8 @@
 package edu.example.cli.commands;
 
 
-import edu.example.cli.picocli.CommandLine;
-import edu.example.cli.picocli.CommandLine.Command;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
 
 
 @Command(
