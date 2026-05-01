@@ -1,10 +1,6 @@
 package edu.example;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 import edu.example.cli.ConsoleApplication;
 import edu.example.core.controller.UserController;
 import edu.example.core.repository.UserRepository;
@@ -14,7 +10,6 @@ import edu.example.infrastructure.util.HibernateUtil;
 
 
 public class Main {
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
     public static void main(String[] args) {
         var sessionFactory = HibernateUtil.getSessionFactory();
         UserRepository userRepository = new HibernateUserRepository(sessionFactory);

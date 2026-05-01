@@ -27,14 +27,14 @@ public class HibernateUtil {
             SessionFactory sf = configuration.buildSessionFactory();
             log.info("SessionFactory successfully created");
             return sf;
-        } catch (Throwable ex) {
+        } catch (Exception e) {
             log.error(
                 "Initial SessionFactory creation failed: {}",
-                ex.getMessage(), ex
+                e.getMessage(), e
             );
             throw new DatabaseConnectionException(
             "Не удалось создать SessionFactory. Проверьте подключение к БД.",
-            ex
+            e
             );
         }
     }
