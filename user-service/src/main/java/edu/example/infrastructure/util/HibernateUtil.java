@@ -16,10 +16,6 @@ public class HibernateUtil {
     );
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
-    private HibernateUtil() {
-        throw new UnsupportedOperationException("Utility class");
-    }
-
     private static SessionFactory buildSessionFactory() {
         try {
             Configuration configuration = new Configuration();
@@ -49,4 +45,9 @@ public class HibernateUtil {
             log.info("SessionFactory closed");
         }
     }
+
+    private HibernateUtil() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
 }
