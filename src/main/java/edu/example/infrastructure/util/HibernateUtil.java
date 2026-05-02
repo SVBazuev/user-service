@@ -16,17 +16,6 @@ public class HibernateUtil {
     );
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
-    public static SessionFactory getSessionFactory() {
-        return sessionFactory;
-    }
-
-    public static void shutdown() {
-        if (sessionFactory != null) {
-            sessionFactory.close();
-            log.info("SessionFactory closed");
-        }
-    }
-
     private static SessionFactory buildSessionFactory() {
         try {
             Configuration configuration = new Configuration();
@@ -43,6 +32,17 @@ public class HibernateUtil {
             "Не удалось создать SessionFactory. Проверьте подключение к БД.",
             e
             );
+        }
+    }
+
+    public static SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+
+    public static void shutdown() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+            log.info("SessionFactory closed");
         }
     }
 
