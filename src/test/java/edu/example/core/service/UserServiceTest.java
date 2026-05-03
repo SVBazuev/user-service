@@ -64,9 +64,12 @@ public class UserServiceTest {
     @BeforeEach
     void setUp() {
         validRequest = validCreateRequest();
-        lenient().when(sessionFactory.getCurrentSession()).thenReturn(session);
-        lenient().when(session.beginTransaction()).thenReturn(transaction);
-        lenient().when(transaction.isActive()).thenReturn(true);
+        lenient().when(sessionFactory.getCurrentSession())
+            .thenReturn(session);
+        lenient().when(session.beginTransaction())
+            .thenReturn(transaction);
+        lenient().when(transaction.isActive())
+            .thenReturn(true);
     }
 
     @Nested
@@ -85,9 +88,13 @@ public class UserServiceTest {
                         return u;
                     }
                 );
-            DTO<UserResponse> result = userService.create(DTO.success(validRequest));
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData().getId()).isEqualTo(1L);
+            DTO<UserResponse> result = userService.create(
+                DTO.success(validRequest)
+            );
+            assertThat(result.isSuccess())
+                .isTrue();
+            assertThat(result.getData().getId())
+                .isEqualTo(1L);
         }
 
         @ParameterizedTest(name = "invalid: name={0}, email={1}, age={2}")
@@ -102,7 +109,9 @@ public class UserServiceTest {
 
         void invalidInputs_ReturnError(String name, String email, Integer age) {
             UserRequest request = new UserRequest(name, email, age);
-            DTO<UserResponse> result = userService.create(DTO.success(request));
+            DTO<UserResponse> result = userService.create(
+                DTO.success(request)
+            );
             assertThat(result.isSuccess()).isFalse();
             assertThat(result.getCode()).isEqualTo(400);
         }
@@ -121,16 +130,20 @@ public class UserServiceTest {
             setIdViaReflection(user, userId);
             setCreatedAtViaReflection(user, LocalDateTime.now());
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
 
             validRequest.setId(userId);
             DTO<UserResponse> result = userService.getById(
                 DTO.success((validRequest))
             );
 
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData().getId()).isEqualTo(userId);
-            assertThat(result.getData().getName()).isEqualTo("Name");
+            assertThat(result.isSuccess())
+                .isTrue();
+            assertThat(result.getData().getId())
+                .isEqualTo(userId);
+            assertThat(result.getData().getName())
+                .isEqualTo("Name");
             verify(transaction).commit();
         }
 
@@ -139,15 +152,19 @@ public class UserServiceTest {
         void getById_NotFound() {
             Long userId = 99L;
             validRequest.setId(userId);
-            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+            when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
 
             DTO<UserResponse> result = userService.getById(
                 DTO.success(validRequest)
             );
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(404);
-            assertThat(result.getMessage()).contains("не найден");
+            assertThat(result.isSuccess())
+                .isFalse();
+            assertThat(result.getCode())
+                .isEqualTo(404);
+            assertThat(result.getMessage())
+                .contains("не найден");
             verify(transaction).rollback();
         }
     }
@@ -163,30 +180,39 @@ public class UserServiceTest {
             setIdViaReflection(user1, 1L);
             setCreatedAtViaReflection(user1, LocalDateTime.now());
 
-            User user2 = new User("Some", "some@test.com", 25);
+            User user2 = new User(
+                "Some", "some@test.com", 25
+            );
             setIdViaReflection(user2, 2L);
             setCreatedAtViaReflection(user2, LocalDateTime.now());
 
-            when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+            when(userRepository.findAll())
+                .thenReturn(List.of(user1, user2));
 
             DTO<List<UserResponse>> result = userService.getAll();
 
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData()).hasSize(2);
-            assertThat(result.getData()).extracting(UserResponse::getName)
-                    .containsExactlyInAnyOrder("Some", "Name");
+            assertThat(result.isSuccess())
+                .isTrue();
+            assertThat(result.getData())
+                .hasSize(2);
+            assertThat(result.getData())
+                .extracting(UserResponse::getName)
+                .containsExactlyInAnyOrder("Some", "Name");
             verify(transaction).commit();
         }
 
         @Test
         @DisplayName("should return empty list when no users")
         void getAll_EmptyList() {
-            when(userRepository.findAll()).thenReturn(List.of());
+            when(userRepository.findAll())
+                .thenReturn(List.of());
 
             DTO<List<UserResponse>> result = userService.getAll();
 
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData()).isEmpty();
+            assertThat(result.isSuccess())
+                .isTrue();
+            assertThat(result.getData())
+                .isEmpty();
         }
     }
 
@@ -203,13 +229,18 @@ public class UserServiceTest {
             updateRequest.setName("Updated Name");
             updateRequest.setAge(35);
 
-            User existingUser = new User("Old Name", "old@test.com", 20);
+            User existingUser = new User(
+                "Old Name", "old@test.com", 20
+            );
             setIdViaReflection(existingUser, userId);
             setCreatedAtViaReflection(existingUser, LocalDateTime.now());
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+            when(userRepository.findById(userId))
+                .thenReturn(Optional.of(existingUser));
 
-            DTO<UserResponse> result = userService.update(DTO.success(updateRequest));
+            DTO<UserResponse> result = userService.update(
+                DTO.success(updateRequest)
+            );
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData().getName()).isEqualTo("Updated Name");
@@ -226,15 +257,22 @@ public class UserServiceTest {
             updateRequest.setId(userId);
             updateRequest.setName("Updated Name");
 
-            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+            when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
 
-            DTO<UserResponse> result = userService.update(DTO.success(updateRequest));
+            DTO<UserResponse> result = userService.update(
+                DTO.success(updateRequest)
+            );
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(404);
-            assertThat(result.getMessage()).contains("не найден");
+            assertThat(result.isSuccess())
+                .isFalse();
+            assertThat(result.getCode())
+                .isEqualTo(404);
+            assertThat(result.getMessage())
+                .contains("не найден");
+            verify(userRepository, never())
+                .update(any());
             verify(transaction).rollback();
-            verify(userRepository, never()).update(any());
         }
 
         @Test
@@ -245,11 +283,16 @@ public class UserServiceTest {
             updateRequest.setId(userId);
             updateRequest.setEmail("invalid");
 
-            DTO<UserResponse> result = userService.update(DTO.success(updateRequest));
+            DTO<UserResponse> result = userService.update(
+                DTO.success(updateRequest)
+            );
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(400);
-            assertThat(result.getMessage()).contains("Некорректный email");
+            assertThat(result.isSuccess())
+                .isFalse();
+            assertThat(result.getCode())
+                .isEqualTo(400);
+            assertThat(result.getMessage())
+                .contains("Некорректный email");
         }
     }
 
@@ -263,11 +306,16 @@ public class UserServiceTest {
             Long userId = 1L;
             validRequest.setId(userId);
 
-            DTO<Void> result = userService.delete(DTO.success(validRequest));
+            DTO<Void> result = userService.delete(
+                DTO.success(validRequest)
+            );
 
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getMessage()).isEqualTo("Пользователь удалён");
-            verify(userRepository).deleteById(userId);
+            assertThat(result.isSuccess())
+                .isTrue();
+            assertThat(result.getMessage())
+                .isEqualTo("Пользователь удалён");
+            verify(userRepository)
+                .deleteById(userId);
             verify(transaction).commit();
         }
 
@@ -277,13 +325,19 @@ public class UserServiceTest {
             Long userId = 99L;
             validRequest.setId(userId);
 
-            doThrow(new UserNotFoundException(userId)).when(userRepository).deleteById(userId);
+            doThrow(new UserNotFoundException(userId))
+                .when(userRepository).deleteById(userId);
 
-            DTO<Void> result = userService.delete(DTO.success(validRequest));
+            DTO<Void> result = userService.delete(
+                DTO.success(validRequest)
+            );
 
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(404);
-            assertThat(result.getMessage()).contains("не найден");
+            assertThat(result.isSuccess())
+                .isFalse();
+            assertThat(result.getCode())
+                .isEqualTo(404);
+            assertThat(result.getMessage())
+                .contains("не найден");
             verify(transaction).rollback();
         }
     }
@@ -292,13 +346,19 @@ public class UserServiceTest {
         return new UserRequest("Name", "test@test.ya", 30);
     }
 
-    private void setIdViaReflection(User user, Long id) throws Exception {
+    private void setIdViaReflection(
+    User user, Long id)
+    throws
+    Exception {
         Field field = User.class.getDeclaredField("id");
         field.setAccessible(true);
         field.set(user, id);
     }
 
-    private void setCreatedAtViaReflection(User user, LocalDateTime createdAt) throws Exception {
+    private void setCreatedAtViaReflection(
+    User user, LocalDateTime createdAt)
+    throws
+    Exception {
         Field field = User.class.getDeclaredField("created_at");
         field.setAccessible(true);
         field.set(user, createdAt);
