@@ -2,12 +2,15 @@ package edu.example.api;
 
 import java.util.List;
 
-import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import edu.example.core.dto.OnCreate;
+import edu.example.core.dto.OnUpdate;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
 import edu.example.core.service.UserService;
@@ -32,7 +35,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(
-    @Valid @RequestBody UserRequest request) {
+    @Validated({Default.class, OnCreate.class}) @RequestBody UserRequest request) {
         UserResponse created = userService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -40,7 +43,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
     @PathVariable Long id,
-    @Valid @RequestBody UserRequest request) {
+    @Validated({Default.class, OnUpdate.class}) @RequestBody UserRequest request) {
         UserResponse updated = userService.update(id, request);
         return ResponseEntity.ok(updated);
     }
