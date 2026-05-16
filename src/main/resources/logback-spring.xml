@@ -28,10 +28,10 @@
     </appender>
 
     <!-- Логгер Hibernate SQL (уровень DEBUG) – пишем только в SQL_FILE -->
-    <!-- <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
         <appender-ref ref="SQL_FILE"/>
-    </logger> -->
-    <logger name="org.hibernate" level="OFF"/>
+    </logger>
+    <!-- <logger name="org.hibernate" level="OFF"/> -->
 
     <!-- (Опционально) Параметры запросов – раскомментировать при необходимости -->
     <!--

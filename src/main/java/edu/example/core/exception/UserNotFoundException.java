@@ -1,4 +1,4 @@
-package edu.example.exception;
+package edu.example.core.exception;
 
 
 public class UserNotFoundException extends UserServiceException {
