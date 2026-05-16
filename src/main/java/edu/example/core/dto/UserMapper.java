@@ -1,29 +1,19 @@
 package edu.example.core.dto;
 
 import edu.example.core.entity.User;
-import lombok.experimental.UtilityClass;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@UtilityClass
-public class UserMapper {
-    public static User toEntity(UserRequest request) {
-        if (request == null) return null;
-        return new User(request.name(), request.email(), request.age());
-    }
+@Mapper(
+    componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+public interface UserMapper {
 
-    public static UserResponse toResponse(User user) {
-        if (user == null) return null;
-        return new UserResponse(
-            user.getId(),
-            user.getName(),
-            user.getEmail(),
-            user.getAge(),
-            user.getCreatedAt()
-        );
-    }
+    User toEntity(UserRequest request);
 
-    public static void updateEntity(User existing, UserRequest request) {
-        if (request.name() != null) existing.setName(request.name());
-        if (request.email() != null) existing.setEmail(request.email());
-        if (request.age() != null) existing.setAge(request.age());
-    }
+    UserResponse toResponse(User user);
+
+    void updateEntity(@MappingTarget User existing, UserRequest request);
 }
