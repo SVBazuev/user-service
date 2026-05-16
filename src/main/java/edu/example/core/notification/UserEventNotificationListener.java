@@ -16,7 +16,7 @@ import edu.example.core.event.UserDeletedEvent;
 @RequiredArgsConstructor
 public class UserEventNotificationListener {
 
-    private final NotificationSender notificationSender;
+    private final DelegatingNotificationSender notificationSender;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
