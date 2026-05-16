@@ -16,9 +16,9 @@ import edu.example.core.entity.User;
 import edu.example.core.exception.UserNotFoundException;
 import edu.example.repository.UserRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class UserService {
 
     private final UserMapper userMapper;
@@ -26,39 +26,59 @@ public class UserService {
 
     @Transactional
     public UserResponse create(UserRequest request) {
+        log.info("Creating user with name: {}", request.name());
         User user = userMapper.toEntity(request);
         User saved = userRepository.save(user);
+        log.info("User created with id: {}", saved.getId());
         return userMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
     public UserResponse getById(Long id) {
+        log.debug("Fetching user by id: {}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+            .orElseThrow(() -> {
+                log.warn("User not found with id: {}", id);
+                return new UserNotFoundException(id);
+            }
+        );
+        log.debug("Found user: {}", user);
         return userMapper.toResponse(user);
     }
 
     @Transactional(readOnly = true)
     public List<UserResponse> getAll() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toResponse)
-                .collect(Collectors.toList());
+        log.debug("Fetching all users");
+        List<UserResponse> responses = userRepository.findAll().stream()
+            .map(userMapper::toResponse)
+            .collect(Collectors.toList());
+        log.debug("Found {} users", responses.size());
+        return responses;
     }
 
     @Transactional
     public UserResponse update(Long id, UserRequest request) {
+        log.info("Updating user with id: {}", id);
         User existing = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+            .orElseThrow(() -> {
+                log.warn("User not found for update, id: {}", id);
+                return new UserNotFoundException(id);
+                }
+            );
         userMapper.updateEntity(existing, request);
         User updated = userRepository.save(existing);
+        log.info("User updated: {}", updated);
         return userMapper.toResponse(updated);
     }
 
     @Transactional
     public void delete(Long id) {
+        log.info("Deleting user with id: {}", id);
         if (!userRepository.existsById(id)) {
+            log.warn("User not found for delete, id: {}", id);
             throw new UserNotFoundException(id);
         }
         userRepository.deleteById(id);
+        log.info("User deleted with id: {}", id);
     }
 }
