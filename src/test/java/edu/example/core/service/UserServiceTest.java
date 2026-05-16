@@ -11,11 +11,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import edu.example.core.dto.UserMapper;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
 import edu.example.core.entity.User;
+import edu.example.core.event.UserDeletedEvent;
 import edu.example.core.exception.UserNotFoundException;
 import edu.example.repository.UserRepository;
 
@@ -34,6 +36,9 @@ class UserServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private UserService userService;
 
@@ -49,6 +54,7 @@ class UserServiceTest {
         userResponse = new UserResponse(
             1L, "Valid", "valid@example.ya", 30, null
         );
+        lenient().doNothing().when(eventPublisher).publishEvent(any());
     }
 
     @Nested
@@ -176,15 +182,16 @@ class UserServiceTest {
         @Test
         @DisplayName("should delete user successfully")
         void delete_Success() {
-            when(userRepository.existsById(1L)).thenReturn(true);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
             userService.delete(1L);
             verify(userRepository).deleteById(1L);
+            verify(eventPublisher).publishEvent(any(UserDeletedEvent.class));
         }
 
         @Test
         @DisplayName("should throw UserNotFoundException when deleting non-existent user")
         void delete_UserNotFound() {
-            when(userRepository.existsById(99L)).thenReturn(false);
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
             assertThatThrownBy(() -> userService.delete(99L))
                 .isInstanceOf(UserNotFoundException.class);
             verify(userRepository, never()).deleteById(any());
