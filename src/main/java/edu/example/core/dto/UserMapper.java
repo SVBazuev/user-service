@@ -11,9 +11,15 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
     nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface UserMapper {
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     User toEntity(UserRequest request);
 
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "createdAt", source = "createdAt")
     UserResponse toResponse(User user);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     void updateEntity(@MappingTarget User existing, UserRequest request);
 }
