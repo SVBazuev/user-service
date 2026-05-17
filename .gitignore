@@ -6,6 +6,5 @@ canonical/
 logs/
 *.log
 *.py
-*[doc]*.md
-*.md
+[_]*.md
 *.sql

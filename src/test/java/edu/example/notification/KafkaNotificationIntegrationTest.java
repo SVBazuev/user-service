@@ -23,6 +23,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import edu.example.core.dto.NotificationOperation;
 import edu.example.core.dto.NotificationRequest;
@@ -36,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @EmbeddedKafka(topics = {"user-events"}, partitions = 1)
 @ActiveProfiles("test")
+@TestPropertySource(properties = "spring.autoconfigure.exclude=")
 class KafkaNotificationIntegrationTest {
 
     @Autowired
