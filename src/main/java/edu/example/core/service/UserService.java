@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,12 +34,13 @@ public class UserService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
+    @CacheEvict(value = {"users", "usersByEmail"}, allEntries = true)
     public UserResponse create(UserRequest request) {
         log.info("Creating user with name: {}", request.name());
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRoles(List.of(UserRole.USER));
-        
+
         User saved = userRepository.save(user);
         log.info("User created with id: {}", saved.getId());
         eventPublisher.publishEvent(new UserCreatedEvent(saved.getEmail()));
@@ -68,6 +71,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = {"users", "usersByEmail"}, key = "#id")
     public UserResponse update(Long id, UserRequest request) {
         log.info("Updating user with id: {}", id);
         User existing = userRepository.findById(id)
@@ -83,6 +87,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = {"users", "usersByEmail"}, key = "#id")
     public void delete(Long id) {
         log.info("Deleting user with id: {}", id);
         User user = userRepository.findById(id)
