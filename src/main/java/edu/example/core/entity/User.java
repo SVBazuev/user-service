@@ -2,6 +2,9 @@ package edu.example.core.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -31,6 +34,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Convert(converter = RoleListConverter.class)
     @Column(columnDefinition = "jsonb")
     private List<UserRole> roles = new ArrayList<>();

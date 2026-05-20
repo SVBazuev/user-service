@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import edu.example.core.entity.User;
+import edu.example.core.entity.UserRole;
 import edu.example.config.JpaAuditingConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +49,10 @@ class UserRepositoryIT {
     @Test
     @DisplayName("save should persist user and generate id")
     void save_ShouldGenerateId() {
-        User user = new User("First", "first@test.ya", 30);
+        User user = new User(
+            "First", "first@test.ya", 30,
+            "password123", List.of(UserRole.USER)
+        );
         User saved = userRepository.save(user);
 
         assertThat(saved.getId()).isNotNull();
@@ -66,7 +70,10 @@ class UserRepositoryIT {
     @Test
     @DisplayName("findById should return user when exists")
     void findById_Existing_ReturnsUser() {
-        User user = new User("Second", "second@test.ya", 28);
+        User user = new User(
+            "Second", "second@test.ya", 28,
+            "password123", List.of(UserRole.USER)
+        );
         userRepository.save(user);
         Long id = user.getId();
 
@@ -90,10 +97,16 @@ class UserRepositoryIT {
     @DisplayName("findAll should return all users")
     void findAll_ShouldReturnList() {
         userRepository.save(
-            new User("First", "first@test.ya", 20)
+            new User(
+                "First", "first@test.ya", 20,
+                "pass", List.of(UserRole.USER)
+            )
         );
         userRepository.save(
-            new User("Second", "second@test.ya", 30)
+            new User(
+                "Second", "second@test.ya", 30,
+                "pass", List.of(UserRole.USER)
+            )
         );
 
         List<User> users = userRepository.findAll();
@@ -117,7 +130,10 @@ class UserRepositoryIT {
     @Test
     @DisplayName("update should modify existing user")
     void update_ShouldModify() {
-        User user = new User("Old", "old@test.ya", 40);
+        User user = new User(
+            "Old", "old@test.ya", 40,
+            "pass", List.of(UserRole.USER)
+        );
         userRepository.save(user);
         user.setName("New");
         user.setAge(41);
@@ -139,7 +155,10 @@ class UserRepositoryIT {
     @Test
     @DisplayName("deleteById should remove user")
     void deleteById_ShouldRemove() {
-        User user = new User("ToDelete", "del@test.ya", 25);
+        User user = new User(
+            "ToDelete", "del@test.ya", 25,
+            "pass", List.of(UserRole.USER)
+        );
         userRepository.save(user);
         Long id = user.getId();
 
@@ -153,7 +172,10 @@ class UserRepositoryIT {
     @Test
     @DisplayName("existsById should return true for existing user")
     void existsById_Existing_ReturnsTrue() {
-        User user = new User("Exist", "exist@test.ya", 18);
+        User user = new User(
+            "Exist", "exist@test.ya", 18,
+            "pass", List.of(UserRole.USER)
+        );
         userRepository.save(user);
         boolean exists = userRepository.existsById(user.getId());
         assertThat(exists)

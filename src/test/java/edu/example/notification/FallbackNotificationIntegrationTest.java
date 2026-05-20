@@ -46,10 +46,10 @@ class FallbackNotificationIntegrationTest {
     @Test
     void shouldFallbackToRestWhenKafkaIsDown() throws InterruptedException {
         UserRequest request = new UserRequest(
-            "FallbackUser", "fallback@test.ya", 28
+            "FallbackUser", "fallback@test.ya", 28, "pass123"
         );
         userService.create(request);
-        
+
         Thread.sleep(500);
 
         verify(restNotificationSender).sendNotification(any(), any());

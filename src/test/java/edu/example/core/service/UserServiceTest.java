@@ -12,11 +12,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import edu.example.core.dto.UserMapper;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
 import edu.example.core.entity.User;
+import edu.example.core.entity.UserRole;
 import edu.example.core.event.UserDeletedEvent;
 import edu.example.core.exception.UserNotFoundException;
 import edu.example.repository.UserRepository;
@@ -24,6 +26,7 @@ import edu.example.repository.UserRepository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +40,9 @@ class UserServiceTest {
     private UserMapper userMapper;
 
     @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
@@ -48,13 +54,20 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        validRequest = new UserRequest("Valid", "valid@example.ya", 30);
-        userEntity = new User("Valid", "valid@example.ya", 30);
+        validRequest = new UserRequest(
+            "Valid", "valid@example.ya", 30, "encodedPassword"
+        );
+        userEntity = new User(
+            "Valid", "valid@example.ya", 30, "encodedPassword"
+        );
         userEntity.setId(1L);
         userResponse = new UserResponse(
-            1L, "Valid", "valid@example.ya", 30, null
+            1L, "Valid", "valid@example.ya", 30,
+            "encodedPassword", List.of(UserRole.USER), null
         );
         lenient().doNothing().when(eventPublisher).publishEvent(any());
+        lenient().when(passwordEncoder.encode(anyString()))
+            .thenReturn("encodedPassword");
     }
 
     @Nested
@@ -65,6 +78,8 @@ class UserServiceTest {
         @DisplayName("should create user successfully")
         void create_Success() {
             when(userMapper.toEntity(validRequest)).thenReturn(userEntity);
+            when(passwordEncoder.encode(validRequest.password()))
+                .thenReturn("encodedPassword");
             when(userRepository.save(any(User.class))).thenReturn(userEntity);
             when(userMapper.toResponse(userEntity)).thenReturn(userResponse);
 
@@ -110,10 +125,16 @@ class UserServiceTest {
         @Test
         @DisplayName("should return list of users")
         void getAll_Success() {
-            User user2 = new User("Second", "second@example.ya", 25);
+            User user2 = new User(
+                "Second", "second@example.ya",
+                25, "encodedPassword"
+            );
             user2.setId(2L);
+            user2.setPassword("encodedPassword");
+            user2.setRoles(List.of(UserRole.USER));
             UserResponse response2 = new UserResponse(
-                2L, "Second", "second@example.ya", 25, null
+                2L, "Second", "second@example.ya", 25,
+                "encodedPassword", List.of(UserRole.USER), null
             );
 
             when(userRepository.findAll()).thenReturn(List.of(userEntity, user2));
@@ -144,11 +165,15 @@ class UserServiceTest {
         @Test
         @DisplayName("should update user successfully")
         void update_Success() {
-            UserRequest updateRequest = new UserRequest("New", null, 35);
-            User updatedEntity = new User("New", "valid@example.ya", 35);
+            UserRequest updateRequest = new UserRequest(
+                "New", null, 35, null
+            );
+            User updatedEntity = new User(
+                "New", "valid@example.ya", 35, null);
             updatedEntity.setId(1L);
             UserResponse updatedResponse = new UserResponse(
-                1L, "New", "valid@example.ya", 35, null
+                1L, "New", "valid@example.ya", 35,
+                null, null, null
             );
 
             when(userRepository.findById(1L))

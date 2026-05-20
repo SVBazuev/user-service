@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -13,6 +14,7 @@ import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import edu.example.config.TestConfig;
 import edu.example.core.dto.UserRequest;
@@ -32,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserController.class)
 @Import(TestConfig.class)
 @ActiveProfiles("test")
+@WithMockUser(roles = "USER")
+@AutoConfigureMockMvc(addFilters = false)
 @MockBean(JpaMetamodelMappingContext.class)
 @DisplayName("UserController REST API Tests")
 class UserControllerTest {
@@ -52,10 +56,12 @@ class UserControllerTest {
     @DisplayName("GET /api/users - should return list of users")
     void getAllUsers_ReturnsList() throws Exception {
         UserResponse user1 = new UserResponse(
-            1L, "First", "first@test.ya", 25, null
+            1L, "First", "first@test.ya", 25,
+            null, null, null
         );
         UserResponse user2 = new UserResponse(
-            2L, "Second", "second@test.ya", 30, null
+            2L, "Second", "second@test.ya", 30,
+            null, null, null
         );
         when(userService.getAll())
             .thenReturn(List.of(user1, user2));
@@ -81,7 +87,8 @@ class UserControllerTest {
     @DisplayName("GET /api/users/{id} - should return user when found")
     void getUserById_Found() throws Exception {
         UserResponse response = new UserResponse(
-            1L, "First", "first@test.ya", 25, null
+            1L, "First", "first@test.ya", 25,
+            null, null, null
         );
         when(userService.getById(1L)).thenReturn(response);
 
@@ -103,13 +110,15 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("POST /api/users - should create user and return 201")
     void createUser_ValidInput() throws Exception {
         UserRequest request = new UserRequest(
-            "First", "first@test.ya", 25
+            "First", "first@test.ya", 25, "pass123"
         );
         UserResponse response = new UserResponse(
-            1L, "First", "first@test.ya", 25, null
+            1L, "First", "first@test.ya", 25,
+            null, null, null
         );
         when(userService.create(any(UserRequest.class)))
             .thenReturn(response);
@@ -123,10 +132,11 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("POST /api/users - should return 400 for invalid input (empty name)")
     void createUser_InvalidName() throws Exception {
         UserRequest invalidRequest = new UserRequest(
-            "", "no-name@test.ya", 25
+            "", "no-name@test.ya", 25, "pass123"
         );
 
         mockMvc.perform(post("/api/users")
@@ -138,10 +148,11 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("POST /api/users - should return 400 for invalid email format")
     void createUser_InvalidEmail() throws Exception {
         UserRequest invalidRequest = new UserRequest(
-            "First", "not-an-email", 25
+            "First", "not-an-email", 25, "pass123"
         );
 
         mockMvc.perform(post("/api/users")
@@ -153,10 +164,11 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("POST /api/users - should return 400 for age out of range")
     void createUser_InvalidAge() throws Exception {
         UserRequest invalidRequest = new UserRequest(
-            "Immortal", "immortal@test.ya", 200
+            "Immortal", "immortal@test.ya", 200, "pass123"
         );
 
         mockMvc.perform(post("/api/users")
@@ -168,13 +180,15 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("PUT /api/users/{id} - should update user and return 200")
     void updateUser_Success() throws Exception {
         UserRequest updateRequest = new UserRequest(
-            "Updated", "updated@test.ya", 35
+            "Updated", "updated@test.ya", 35, null
         );
         UserResponse response = new UserResponse(
-            1L, "Updated", "updated@test.ya", 35, null
+            1L, "Updated", "updated@test.ya", 35,
+            null, null,null
         );
         when(userService.update(eq(1L), any(UserRequest.class)))
             .thenReturn(response);
@@ -188,10 +202,11 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("PUT /api/users/{id} - should return 404 when updating non-existent user")
     void updateUser_NotFound() throws Exception {
         UserRequest updateRequest = new UserRequest(
-            "Third", "third@test.ya", 30
+            "Third", "third@test.ya", 30, "pass123"
         );
         when(userService.update(eq(99L), any(UserRequest.class)))
             .thenThrow(new UserNotFoundException(99L));
@@ -204,6 +219,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("DELETE /api/users/{id} - should delete user and return 204")
     void deleteUser_Success() throws Exception {
         mockMvc.perform(delete("/api/users/1"))
@@ -211,6 +227,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("DELETE /api/users/{id} - should return 404 when deleting non-existent user")
     void deleteUser_NotFound() throws Exception {
         doThrow(new UserNotFoundException(99L))

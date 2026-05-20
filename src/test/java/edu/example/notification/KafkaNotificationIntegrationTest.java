@@ -91,7 +91,7 @@ class KafkaNotificationIntegrationTest {
     @Test
     void shouldSendKafkaMessageOnUserCreate() throws Exception {
         UserRequest request = new UserRequest(
-            "KafkaUser", "kafka@test.ya", 25
+            "KafkaUser", "kafka@test.ya", 25, "pass123"
         );
         userService.create(request);
 
@@ -109,7 +109,7 @@ class KafkaNotificationIntegrationTest {
     @Test
     void shouldSendKafkaMessageOnUserDelete() throws Exception {
         UserRequest createRequest = new UserRequest(
-            "DeleteKafka", "delete@test.ya", 30
+            "DeleteKafka", "delete@test.ya", 30, "pass123"
         );
         UserResponse created = userService.create(createRequest);
         while (records.poll(100, TimeUnit.MILLISECONDS) != null) {
