@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import edu.example.core.dto.UserMapper;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
 import edu.example.core.entity.User;
+import edu.example.core.entity.UserRole;
 import edu.example.core.event.UserCreatedEvent;
 import edu.example.core.event.UserDeletedEvent;
 import edu.example.core.exception.UserNotFoundException;
@@ -26,12 +28,16 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public UserResponse create(UserRequest request) {
         log.info("Creating user with name: {}", request.name());
         User user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRoles(List.of(UserRole.USER));
+        
         User saved = userRepository.save(user);
         log.info("User created with id: {}", saved.getId());
         eventPublisher.publishEvent(new UserCreatedEvent(saved.getEmail()));

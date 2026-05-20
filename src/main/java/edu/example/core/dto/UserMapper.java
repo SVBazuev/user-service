@@ -13,6 +13,8 @@ public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     User toEntity(UserRequest request);
 
     @Mapping(target = "id", source = "id")
@@ -21,5 +23,7 @@ public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     void updateEntity(@MappingTarget User existing, UserRequest request);
 }
