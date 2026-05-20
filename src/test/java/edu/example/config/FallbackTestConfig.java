@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 public class FallbackTestConfig {
     @Bean
     @Primary
+    @SuppressWarnings("unchecked")
     public KafkaTemplate<String, NotificationRequest> failingKafkaTemplate() {
         KafkaTemplate<String, NotificationRequest> mock = Mockito.mock(KafkaTemplate.class);
         when(mock.send(anyString(), any(NotificationRequest.class)))
