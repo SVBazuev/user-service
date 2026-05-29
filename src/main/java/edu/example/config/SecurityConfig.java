@@ -18,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import edu.example.core.entity.User;
-import edu.example.core.entity.UserRole;
 import edu.example.repository.UserRepository;
 
 @Configuration
