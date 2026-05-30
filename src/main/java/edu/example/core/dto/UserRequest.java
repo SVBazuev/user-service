@@ -17,5 +17,9 @@ public record UserRequest(
     @Max(value = 150, message = "Возраст должен быть <= 150",
         groups = {Default.class, OnCreate.class, OnUpdate.class}
     )
-    Integer age
+    Integer age,
+
+    @NotBlank(message = "Пароль не может быть пустым", groups = OnCreate.class)
+    @Size(min = 4, message = "Пароль должен содержать минимум 4 символа", groups = OnCreate.class)
+    String password
 ) {}

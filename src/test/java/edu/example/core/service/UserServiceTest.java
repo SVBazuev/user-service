@@ -11,17 +11,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import edu.example.core.dto.UserMapper;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
 import edu.example.core.entity.User;
+import edu.example.core.entity.UserRole;
+import edu.example.core.event.UserDeletedEvent;
 import edu.example.core.exception.UserNotFoundException;
 import edu.example.repository.UserRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,16 +36,38 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private UserService userService;
 
     private UserRequest validRequest;
+    private User userEntity;
+    private UserResponse userResponse;
 
     @BeforeEach
     void setUp() {
         validRequest = new UserRequest(
-            "Valid", "valid@example.ya", 30
+            "Valid", "valid@example.ya", 30, "encodedPassword"
         );
+        userEntity = new User(
+            "Valid", "valid@example.ya", 30, "encodedPassword"
+        );
+        userEntity.setId(1L);
+        userResponse = new UserResponse(
+            1L, "Valid", "valid@example.ya", 30,
+            "encodedPassword", List.of(UserRole.USER), null
+        );
+        lenient().doNothing().when(eventPublisher).publishEvent(any());
+        lenient().when(passwordEncoder.encode(anyString()))
+            .thenReturn("encodedPassword");
     }
 
     @Nested
@@ -50,19 +77,19 @@ class UserServiceTest {
         @Test
         @DisplayName("should create user successfully")
         void create_Success() {
-            User savedUser = UserMapper.toEntity(validRequest);
-            savedUser.setId(1L);
-            when(userRepository.save(any(User.class)))
-                .thenReturn(savedUser);
+            when(userMapper.toEntity(validRequest)).thenReturn(userEntity);
+            when(passwordEncoder.encode(validRequest.password()))
+                .thenReturn("encodedPassword");
+            when(userRepository.save(any(User.class))).thenReturn(userEntity);
+            when(userMapper.toResponse(userEntity)).thenReturn(userResponse);
 
             UserResponse response = userService.create(validRequest);
 
-            assertThat(response.id())
-                .isEqualTo(1L);
-            assertThat(response.name())
-                .isEqualTo("Valid");
-            verify(userRepository, times(1))
-                .save(any(User.class));
+            assertThat(response.id()).isEqualTo(1L);
+            assertThat(response.name()).isEqualTo("Valid");
+            verify(userRepository, times(1)).save(any(User.class));
+            verify(userMapper).toEntity(validRequest);
+            verify(userMapper).toResponse(userEntity);
         }
     }
 
@@ -73,28 +100,21 @@ class UserServiceTest {
         @Test
         @DisplayName("should return user when found")
         void getById_Found() {
-            User user = new User(
-                "First", "first@example.ya", 30
-            );
-            user.setId(1L);
-            when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
+            when(userMapper.toResponse(userEntity)).thenReturn(userResponse);
 
             UserResponse response = userService.getById(1L);
 
-            assertThat(response.id())
-                .isEqualTo(1L);
-            assertThat(response.name())
-                .isEqualTo("First");
+            assertThat(response.id()).isEqualTo(1L);
+            assertThat(response.name()).isEqualTo("Valid");
         }
 
         @Test
         @DisplayName("should throw UserNotFoundException when not found")
         void getById_NotFound() {
-            when(userRepository.findById(99L))
-                .thenReturn(Optional.empty());
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
             assertThatThrownBy(() -> userService.getById(99L))
-                .isInstanceOf(UserNotFoundException.class);
+                    .isInstanceOf(UserNotFoundException.class);
         }
     }
 
@@ -105,34 +125,36 @@ class UserServiceTest {
         @Test
         @DisplayName("should return list of users")
         void getAll_Success() {
-            User user1 = new User(
-                "First", "first@example.ya", 30
-            );
-            user1.setId(1L);
-
             User user2 = new User(
-                "Second", "second@example.ya", 25);
+                "Second", "second@example.ya",
+                25, "encodedPassword"
+            );
             user2.setId(2L);
+            user2.setPassword("encodedPassword");
+            user2.setRoles(List.of(UserRole.USER));
+            UserResponse response2 = new UserResponse(
+                2L, "Second", "second@example.ya", 25,
+                "encodedPassword", List.of(UserRole.USER), null
+            );
 
-            when(userRepository.findAll())
-                .thenReturn(List.of(user1, user2));
+            when(userRepository.findAll()).thenReturn(List.of(userEntity, user2));
+            when(userMapper.toResponse(userEntity)).thenReturn(userResponse);
+            when(userMapper.toResponse(user2)).thenReturn(response2);
 
             List<UserResponse> responses = userService.getAll();
 
             assertThat(responses).hasSize(2);
-            assertThat(responses)
-                .extracting(UserResponse::name)
-                .containsExactlyInAnyOrder("First", "Second");
+            assertThat(responses).extracting(UserResponse::name)
+                    .containsExactlyInAnyOrder("Valid", "Second");
         }
 
         @Test
         @DisplayName("should return empty list when no users")
         void getAll_EmptyList() {
-            when(userRepository.findAll())
-                .thenReturn(List.of());
+            when(userRepository.findAll()).thenReturn(List.of());
             List<UserResponse> responses = userService.getAll();
-            assertThat(responses)
-                .isEmpty();
+            assertThat(responses).isEmpty();
+            verify(userMapper, never()).toResponse(any());
         }
     }
 
@@ -143,31 +165,29 @@ class UserServiceTest {
         @Test
         @DisplayName("should update user successfully")
         void update_Success() {
-            User existingUser = new User(
-                "Old", "old@example.ya", 20
-            );
-            existingUser.setId(1L);
-            when(userRepository.findById(1L))
-                .thenReturn(Optional.of(existingUser));
-
-            User updatedUser = new User(
-                "New", "old@example.ya", 35
-            );
-            updatedUser.setId(1L);
-            when(userRepository.save(any(User.class)))
-                .thenReturn(updatedUser);
-
             UserRequest updateRequest = new UserRequest(
-                "New", null, 35
+                "New", null, 35, null
             );
+            User updatedEntity = new User(
+                "New", "valid@example.ya", 35, null);
+            updatedEntity.setId(1L);
+            UserResponse updatedResponse = new UserResponse(
+                1L, "New", "valid@example.ya", 35,
+                null, null, null
+            );
+
+            when(userRepository.findById(1L))
+                .thenReturn(Optional.of(userEntity));
+            doNothing().when(userMapper).updateEntity(userEntity, updateRequest);
+            when(userRepository.save(userEntity)).thenReturn(updatedEntity);
+            when(userMapper.toResponse(updatedEntity)).thenReturn(updatedResponse);
+
             UserResponse response = userService.update(1L, updateRequest);
 
-            assertThat(response.name())
-                .isEqualTo("New");
-            assertThat(response.age())
-                .isEqualTo(35);
-            verify(userRepository)
-                .save(existingUser);
+            assertThat(response.name()).isEqualTo("New");
+            assertThat(response.age()).isEqualTo(35);
+            verify(userMapper).updateEntity(userEntity, updateRequest);
+            verify(userRepository).save(userEntity);
         }
 
         @Test
@@ -175,7 +195,8 @@ class UserServiceTest {
         void update_UserNotFound() {
             when(userRepository.findById(99L)).thenReturn(Optional.empty());
             assertThatThrownBy(() -> userService.update(99L, validRequest))
-                .isInstanceOf(UserNotFoundException.class);
+                    .isInstanceOf(UserNotFoundException.class);
+            verify(userMapper, never()).updateEntity(any(), any());
         }
     }
 
@@ -186,23 +207,19 @@ class UserServiceTest {
         @Test
         @DisplayName("should delete user successfully")
         void delete_Success() {
-            when(userRepository.existsById(1L))
-                .thenReturn(true);
-
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
             userService.delete(1L);
-            verify(userRepository)
-                .deleteById(1L);
+            verify(userRepository).deleteById(1L);
+            verify(eventPublisher).publishEvent(any(UserDeletedEvent.class));
         }
 
         @Test
         @DisplayName("should throw UserNotFoundException when deleting non-existent user")
         void delete_UserNotFound() {
-            when(userRepository.existsById(99L))
-                .thenReturn(false);
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
             assertThatThrownBy(() -> userService.delete(99L))
                 .isInstanceOf(UserNotFoundException.class);
-            verify(userRepository, never())
-                .deleteById(any());
+            verify(userRepository, never()).deleteById(any());
         }
     }
 }

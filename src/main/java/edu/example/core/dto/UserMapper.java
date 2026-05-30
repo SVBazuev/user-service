@@ -1,29 +1,31 @@
 package edu.example.core.dto;
 
 import edu.example.core.entity.User;
-import lombok.experimental.UtilityClass;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@UtilityClass
-public class UserMapper {
-    public static User toEntity(UserRequest request) {
-        if (request == null) return null;
-        return new User(request.name(), request.email(), request.age());
-    }
+@Mapper(
+    componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+public interface UserMapper {
 
-    public static UserResponse toResponse(User user) {
-        if (user == null) return null;
-        return new UserResponse(
-            user.getId(),
-            user.getName(),
-            user.getEmail(),
-            user.getAge(),
-            user.getCreatedAt()
-        );
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    User toEntity(UserRequest request);
 
-    public static void updateEntity(User existing, UserRequest request) {
-        if (request.name() != null) existing.setName(request.name());
-        if (request.email() != null) existing.setEmail(request.email());
-        if (request.age() != null) existing.setAge(request.age());
-    }
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "password", source = "password")
+    @Mapping(target = "roles", source = "roles")
+    @Mapping(target = "createdAt", source = "createdAt")
+    UserResponse toResponse(User user);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    void updateEntity(@MappingTarget User existing, UserRequest request);
 }
