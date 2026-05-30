@@ -57,20 +57,24 @@ class UserControllerTest {
     void getAllUsers_ReturnsList() throws Exception {
         UserResponse user1 = new UserResponse(
             1L, "First", "first@test.ya", 25,
-            null, null, null
+            null, null
         );
         UserResponse user2 = new UserResponse(
             2L, "Second", "second@test.ya", 30,
-            null, null, null
+            null, null
         );
         when(userService.getAll())
             .thenReturn(List.of(user1, user2));
 
         mockMvc.perform(get("/api/users"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(2)))
-            .andExpect(jsonPath("$[0].name").value("First"))
-            .andExpect(jsonPath("$[1].name").value("Second"));
+            .andExpect(jsonPath("$._embedded.userResponseList", hasSize(2)))
+            .andExpect(jsonPath("$._embedded.userResponseList[0].id").value(1))
+            .andExpect(jsonPath("$._embedded.userResponseList[0].name").value("First"))
+            .andExpect(jsonPath("$._embedded.userResponseList[1].id").value(2))
+            .andExpect(jsonPath("$._embedded.userResponseList[1].name").value("Second"))
+            .andExpect(jsonPath("$._links.self.href").exists())
+            .andExpect(jsonPath("$._links.create.href").exists());
     }
 
     @Test
@@ -80,7 +84,9 @@ class UserControllerTest {
 
         mockMvc.perform(get("/api/users"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(0)));
+            .andExpect(jsonPath("$._embedded").doesNotExist())
+            .andExpect(jsonPath("$._links.self.href").exists())
+            .andExpect(jsonPath("$._links.create.href").exists());
     }
 
     @Test
@@ -88,7 +94,7 @@ class UserControllerTest {
     void getUserById_Found() throws Exception {
         UserResponse response = new UserResponse(
             1L, "First", "first@test.ya", 25,
-            null, null, null
+            null, null
         );
         when(userService.getById(1L)).thenReturn(response);
 
@@ -118,7 +124,7 @@ class UserControllerTest {
         );
         UserResponse response = new UserResponse(
             1L, "First", "first@test.ya", 25,
-            null, null, null
+            null, null
         );
         when(userService.create(any(UserRequest.class)))
             .thenReturn(response);
@@ -188,7 +194,7 @@ class UserControllerTest {
         );
         UserResponse response = new UserResponse(
             1L, "Updated", "updated@test.ya", 35,
-            null, null,null
+            null, null
         );
         when(userService.update(eq(1L), any(UserRequest.class)))
             .thenReturn(response);
