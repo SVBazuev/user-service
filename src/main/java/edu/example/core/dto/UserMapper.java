@@ -18,7 +18,6 @@ public interface UserMapper {
     User toEntity(UserRequest request);
 
     @Mapping(target = "id", source = "id")
-    @Mapping(target = "password", source = "password")
     @Mapping(target = "roles", source = "roles")
     @Mapping(target = "createdAt", source = "createdAt")
     UserResponse toResponse(User user);

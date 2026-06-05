@@ -63,7 +63,7 @@ class UserServiceTest {
         userEntity.setId(1L);
         userResponse = new UserResponse(
             1L, "Valid", "valid@example.ya", 30,
-            "encodedPassword", List.of(UserRole.USER), null
+            List.of(UserRole.USER), null
         );
         lenient().doNothing().when(eventPublisher).publishEvent(any());
         lenient().when(passwordEncoder.encode(anyString()))
@@ -134,7 +134,7 @@ class UserServiceTest {
             user2.setRoles(List.of(UserRole.USER));
             UserResponse response2 = new UserResponse(
                 2L, "Second", "second@example.ya", 25,
-                "encodedPassword", List.of(UserRole.USER), null
+                List.of(UserRole.USER), null
             );
 
             when(userRepository.findAll()).thenReturn(List.of(userEntity, user2));
@@ -173,7 +173,7 @@ class UserServiceTest {
             updatedEntity.setId(1L);
             UserResponse updatedResponse = new UserResponse(
                 1L, "New", "valid@example.ya", 35,
-                null, null, null
+                null, null
             );
 
             when(userRepository.findById(1L))
