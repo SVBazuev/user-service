@@ -1,29 +1,34 @@
 package edu.example.core.dto;
 
-
 import java.time.LocalDateTime;
+import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 
-public class UserResponse {
-    private Long id;
-    private String name;
-    private String email;
-    private Integer age;
-    private LocalDateTime createdAt;
+import edu.example.core.entity.UserRole;
 
-    public UserResponse(
-    Long id, String name, String email,
-    Integer age, LocalDateTime createdAt) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.age = age;
-        this.createdAt = createdAt;
-    }
+public record UserResponse(
+    @Schema(description = "Unique identifier of the user", example = "1")
+    Long id,
 
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-    public Integer getAge() { return age; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-}
+    @Schema(description = "Full name of the user", example = "John Doe")
+    String name,
+
+    @Schema(description = "Email address of the user", example = "john@example.com")
+    String email,
+
+    @Schema(description = "Age of the user", example = "30")
+    Integer age,
+
+    @Schema(
+        description = "List of roles assigned to the user",
+        example = "[\"USER\"]"
+    )
+    List<UserRole> roles,
+
+    @Schema(
+        description = "Date and time when the user was created",
+        example = "2025-05-30T12:00:00"
+    )
+    LocalDateTime createdAt
+) {}

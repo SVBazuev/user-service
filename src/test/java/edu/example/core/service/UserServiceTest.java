@@ -1,75 +1,73 @@
 package edu.example.core.service;
 
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-
-import java.lang.reflect.Field;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-
-import edu.example.core.dto.DTO;
 import edu.example.core.dto.UserMapper;
 import edu.example.core.dto.UserRequest;
 import edu.example.core.dto.UserResponse;
 import edu.example.core.entity.User;
-import edu.example.core.repository.UserRepository;
-import edu.example.exception.UserNotFoundException;
+import edu.example.core.entity.UserRole;
+import edu.example.core.event.UserDeletedEvent;
+import edu.example.core.exception.UserNotFoundException;
+import edu.example.repository.UserRepository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UserService Unit Texts")
-public class UserServiceTest {
+@DisplayName("UserService Unit Tests")
+class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
 
     @Mock
-    private SessionFactory sessionFactory;
+    private UserMapper userMapper;
 
     @Mock
-    private Session session;
+    private PasswordEncoder passwordEncoder;
 
     @Mock
-    private Transaction transaction;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private UserService userService;
 
     private UserRequest validRequest;
+    private User userEntity;
+    private UserResponse userResponse;
 
     @BeforeEach
     void setUp() {
-        validRequest = validCreateRequest();
-        lenient().when(sessionFactory.getCurrentSession())
-            .thenReturn(session);
-        lenient().when(session.beginTransaction())
-            .thenReturn(transaction);
-        lenient().when(transaction.isActive())
-            .thenReturn(true);
+        validRequest = new UserRequest(
+            "Valid", "valid@example.ya", 30, "encodedPassword"
+        );
+        userEntity = new User(
+            "Valid", "valid@example.ya", 30, "encodedPassword"
+        );
+        userEntity.setId(1L);
+        userResponse = new UserResponse(
+            1L, "Valid", "valid@example.ya", 30,
+            List.of(UserRole.USER), null
+        );
+        lenient().doNothing().when(eventPublisher).publishEvent(any());
+        lenient().when(passwordEncoder.encode(anyString()))
+            .thenReturn("encodedPassword");
     }
 
     @Nested
@@ -77,43 +75,21 @@ public class UserServiceTest {
     class CreateTests {
 
         @Test
-        @DisplayName("successful creation")
-        void success() throws Exception {
-            when(userRepository.save(any(User.class)))
-                .thenAnswer(
-                    inv -> {
-                        User u = inv.getArgument(0);
-                        setIdViaReflection(u, 1L);
-                        setCreatedAtViaReflection(u, LocalDateTime.now());
-                        return u;
-                    }
-                );
-            DTO<UserResponse> result = userService.create(
-                DTO.success(validRequest)
-            );
-            assertThat(result.isSuccess())
-                .isTrue();
-            assertThat(result.getData().getId())
-                .isEqualTo(1L);
-        }
+        @DisplayName("should create user successfully")
+        void create_Success() {
+            when(userMapper.toEntity(validRequest)).thenReturn(userEntity);
+            when(passwordEncoder.encode(validRequest.password()))
+                .thenReturn("encodedPassword");
+            when(userRepository.save(any(User.class))).thenReturn(userEntity);
+            when(userMapper.toResponse(userEntity)).thenReturn(userResponse);
 
-        @ParameterizedTest(name = "invalid: name={0}, email={1}, age={2}")
-        @CsvSource({
-            ", test@test.ya, 25",
-            "'', test@test.ya, 25",
-            "Name, , 25",
-            "Name, bad-email, 25",
-            "Name, test@test.ya, -1",
-            "Name, test@test.ya, 200"
-        })
+            UserResponse response = userService.create(validRequest);
 
-        void invalidInputs_ReturnError(String name, String email, Integer age) {
-            UserRequest request = new UserRequest(name, email, age);
-            DTO<UserResponse> result = userService.create(
-                DTO.success(request)
-            );
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getCode()).isEqualTo(400);
+            assertThat(response.id()).isEqualTo(1L);
+            assertThat(response.name()).isEqualTo("Valid");
+            verify(userRepository, times(1)).save(any(User.class));
+            verify(userMapper).toEntity(validRequest);
+            verify(userMapper).toResponse(userEntity);
         }
     }
 
@@ -123,49 +99,22 @@ public class UserServiceTest {
 
         @Test
         @DisplayName("should return user when found")
-        void getById_Found() throws Exception {
-            Long userId = 1L;
+        void getById_Found() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
+            when(userMapper.toResponse(userEntity)).thenReturn(userResponse);
 
-            User user = UserMapper.toEntity(validRequest);
-            setIdViaReflection(user, userId);
-            setCreatedAtViaReflection(user, LocalDateTime.now());
+            UserResponse response = userService.getById(1L);
 
-            when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
-
-            validRequest.setId(userId);
-            DTO<UserResponse> result = userService.getById(
-                DTO.success((validRequest))
-            );
-
-            assertThat(result.isSuccess())
-                .isTrue();
-            assertThat(result.getData().getId())
-                .isEqualTo(userId);
-            assertThat(result.getData().getName())
-                .isEqualTo("Name");
-            verify(transaction).commit();
+            assertThat(response.id()).isEqualTo(1L);
+            assertThat(response.name()).isEqualTo("Valid");
         }
 
         @Test
-        @DisplayName("should return 404 when user not found")
+        @DisplayName("should throw UserNotFoundException when not found")
         void getById_NotFound() {
-            Long userId = 99L;
-            validRequest.setId(userId);
-            when(userRepository.findById(userId))
-                .thenReturn(Optional.empty());
-
-            DTO<UserResponse> result = userService.getById(
-                DTO.success(validRequest)
-            );
-
-            assertThat(result.isSuccess())
-                .isFalse();
-            assertThat(result.getCode())
-                .isEqualTo(404);
-            assertThat(result.getMessage())
-                .contains("не найден");
-            verify(transaction).rollback();
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> userService.getById(99L))
+                    .isInstanceOf(UserNotFoundException.class);
         }
     }
 
@@ -175,44 +124,37 @@ public class UserServiceTest {
 
         @Test
         @DisplayName("should return list of users")
-        void getAll_Success() throws Exception {
-            User user1 = UserMapper.toEntity(validRequest);
-            setIdViaReflection(user1, 1L);
-            setCreatedAtViaReflection(user1, LocalDateTime.now());
-
+        void getAll_Success() {
             User user2 = new User(
-                "Some", "some@test.com", 25
+                "Second", "second@example.ya",
+                25, "encodedPassword"
             );
-            setIdViaReflection(user2, 2L);
-            setCreatedAtViaReflection(user2, LocalDateTime.now());
+            user2.setId(2L);
+            user2.setPassword("encodedPassword");
+            user2.setRoles(List.of(UserRole.USER));
+            UserResponse response2 = new UserResponse(
+                2L, "Second", "second@example.ya", 25,
+                List.of(UserRole.USER), null
+            );
 
-            when(userRepository.findAll())
-                .thenReturn(List.of(user1, user2));
+            when(userRepository.findAll()).thenReturn(List.of(userEntity, user2));
+            when(userMapper.toResponse(userEntity)).thenReturn(userResponse);
+            when(userMapper.toResponse(user2)).thenReturn(response2);
 
-            DTO<List<UserResponse>> result = userService.getAll();
+            List<UserResponse> responses = userService.getAll();
 
-            assertThat(result.isSuccess())
-                .isTrue();
-            assertThat(result.getData())
-                .hasSize(2);
-            assertThat(result.getData())
-                .extracting(UserResponse::getName)
-                .containsExactlyInAnyOrder("Some", "Name");
-            verify(transaction).commit();
+            assertThat(responses).hasSize(2);
+            assertThat(responses).extracting(UserResponse::name)
+                    .containsExactlyInAnyOrder("Valid", "Second");
         }
 
         @Test
         @DisplayName("should return empty list when no users")
         void getAll_EmptyList() {
-            when(userRepository.findAll())
-                .thenReturn(List.of());
-
-            DTO<List<UserResponse>> result = userService.getAll();
-
-            assertThat(result.isSuccess())
-                .isTrue();
-            assertThat(result.getData())
-                .isEmpty();
+            when(userRepository.findAll()).thenReturn(List.of());
+            List<UserResponse> responses = userService.getAll();
+            assertThat(responses).isEmpty();
+            verify(userMapper, never()).toResponse(any());
         }
     }
 
@@ -222,77 +164,39 @@ public class UserServiceTest {
 
         @Test
         @DisplayName("should update user successfully")
-        void update_Success() throws Exception {
-            Long userId = 1L;
-            UserRequest updateRequest = new UserRequest();
-            updateRequest.setId(userId);
-            updateRequest.setName("Updated Name");
-            updateRequest.setAge(35);
-
-            User existingUser = new User(
-                "Old Name", "old@test.com", 20
+        void update_Success() {
+            UserRequest updateRequest = new UserRequest(
+                "New", null, 35, null
             );
-            setIdViaReflection(existingUser, userId);
-            setCreatedAtViaReflection(existingUser, LocalDateTime.now());
-
-            when(userRepository.findById(userId))
-                .thenReturn(Optional.of(existingUser));
-
-            DTO<UserResponse> result = userService.update(
-                DTO.success(updateRequest)
+            User updatedEntity = new User(
+                "New", "valid@example.ya", 35, null);
+            updatedEntity.setId(1L);
+            UserResponse updatedResponse = new UserResponse(
+                1L, "New", "valid@example.ya", 35,
+                null, null
             );
 
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getData().getName()).isEqualTo("Updated Name");
-            assertThat(result.getData().getAge()).isEqualTo(35);
-            verify(userRepository).update(existingUser);
-            verify(transaction).commit();
+            when(userRepository.findById(1L))
+                .thenReturn(Optional.of(userEntity));
+            doNothing().when(userMapper).updateEntity(userEntity, updateRequest);
+            when(userRepository.save(userEntity)).thenReturn(updatedEntity);
+            when(userMapper.toResponse(updatedEntity)).thenReturn(updatedResponse);
+
+            UserResponse response = userService.update(1L, updateRequest);
+
+            assertThat(response.name()).isEqualTo("New");
+            assertThat(response.age()).isEqualTo(35);
+            verify(userMapper).updateEntity(userEntity, updateRequest);
+            verify(userRepository).save(userEntity);
         }
 
         @Test
-        @DisplayName("should return 404 when updating non-existent user")
+        @DisplayName("should throw UserNotFoundException when updating non-existent user")
         void update_UserNotFound() {
-            Long userId = 99L;
-            UserRequest updateRequest = new UserRequest();
-            updateRequest.setId(userId);
-            updateRequest.setName("Updated Name");
-
-            when(userRepository.findById(userId))
-                .thenReturn(Optional.empty());
-
-            DTO<UserResponse> result = userService.update(
-                DTO.success(updateRequest)
-            );
-
-            assertThat(result.isSuccess())
-                .isFalse();
-            assertThat(result.getCode())
-                .isEqualTo(404);
-            assertThat(result.getMessage())
-                .contains("не найден");
-            verify(userRepository, never())
-                .update(any());
-            verify(transaction).rollback();
-        }
-
-        @Test
-        @DisplayName("should validate email during update")
-        void update_InvalidEmail() {
-            Long userId = 1L;
-            UserRequest updateRequest = new UserRequest();
-            updateRequest.setId(userId);
-            updateRequest.setEmail("invalid");
-
-            DTO<UserResponse> result = userService.update(
-                DTO.success(updateRequest)
-            );
-
-            assertThat(result.isSuccess())
-                .isFalse();
-            assertThat(result.getCode())
-                .isEqualTo(400);
-            assertThat(result.getMessage())
-                .contains("Некорректный email");
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> userService.update(99L, validRequest))
+                    .isInstanceOf(UserNotFoundException.class);
+            verify(userMapper, never()).updateEntity(any(), any());
         }
     }
 
@@ -303,64 +207,19 @@ public class UserServiceTest {
         @Test
         @DisplayName("should delete user successfully")
         void delete_Success() {
-            Long userId = 1L;
-            validRequest.setId(userId);
-
-            DTO<Void> result = userService.delete(
-                DTO.success(validRequest)
-            );
-
-            assertThat(result.isSuccess())
-                .isTrue();
-            assertThat(result.getMessage())
-                .isEqualTo("Пользователь удалён");
-            verify(userRepository)
-                .deleteById(userId);
-            verify(transaction).commit();
+            when(userRepository.findById(1L)).thenReturn(Optional.of(userEntity));
+            userService.delete(1L);
+            verify(userRepository).deleteById(1L);
+            verify(eventPublisher).publishEvent(any(UserDeletedEvent.class));
         }
 
         @Test
-        @DisplayName("should return 404 when deleting non-existent user")
+        @DisplayName("should throw UserNotFoundException when deleting non-existent user")
         void delete_UserNotFound() {
-            Long userId = 99L;
-            validRequest.setId(userId);
-
-            doThrow(new UserNotFoundException(userId))
-                .when(userRepository).deleteById(userId);
-
-            DTO<Void> result = userService.delete(
-                DTO.success(validRequest)
-            );
-
-            assertThat(result.isSuccess())
-                .isFalse();
-            assertThat(result.getCode())
-                .isEqualTo(404);
-            assertThat(result.getMessage())
-                .contains("не найден");
-            verify(transaction).rollback();
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> userService.delete(99L))
+                .isInstanceOf(UserNotFoundException.class);
+            verify(userRepository, never()).deleteById(any());
         }
-    }
-
-    private UserRequest validCreateRequest() {
-        return new UserRequest("Name", "test@test.ya", 30);
-    }
-
-    private void setIdViaReflection(
-    User user, Long id)
-    throws
-    Exception {
-        Field field = User.class.getDeclaredField("id");
-        field.setAccessible(true);
-        field.set(user, id);
-    }
-
-    private void setCreatedAtViaReflection(
-    User user, LocalDateTime createdAt)
-    throws
-    Exception {
-        Field field = User.class.getDeclaredField("created_at");
-        field.setAccessible(true);
-        field.set(user, createdAt);
     }
 }

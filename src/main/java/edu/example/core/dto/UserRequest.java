@@ -1,44 +1,31 @@
 package edu.example.core.dto;
 
-import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
+import jakarta.validation.groups.Default;
 
-public class UserRequest {
-    private Long id;
-    private String name;
-    private String email;
-    private Integer age;
-    private LocalDateTime createdAt;
+public record UserRequest(
 
-    public UserRequest() {}
+    @Schema(example = "John Doe")
+    @NotBlank(message = "Имя не может быть пустым", groups = OnCreate.class)
+    String name,
 
-    public UserRequest(String name, String email, Integer age) {
-        this.name = name;
-        this.email = email;
-        this.age = age;
-    }
+    @Schema(example = "john@example.com")
+    @NotBlank(message = "Email не может быть пустым", groups = OnCreate.class)
+    @Email(message = "Некорректный email", groups = OnCreate.class)
+    String email,
 
-    public Long getId() { return id; }
-    /** Except C from CRUD*/
-    public void setId(Long id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public Integer getAge() { return age; }
-    public void setAge(Integer age) { this.age = age; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    /** Only R from CRUD*/
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    @Schema(example = "30")
+    @Min(value = 0, message = "Возраст должен быть >= 0",
+        groups = {Default.class, OnCreate.class, OnUpdate.class}
+    )
+    @Max(value = 150, message = "Возраст должен быть <= 150",
+        groups = {Default.class, OnCreate.class, OnUpdate.class}
+    )
+    Integer age,
 
-    public boolean isEmpty() {
-        return(
-            this.id == null
-            && this.name == null
-            && this.email == null
-            && this.age == null
-            && this.createdAt == null
-        );
-    }
-}
+    @Schema(example = "secret123")
+    @NotBlank(message = "Пароль не может быть пустым", groups = OnCreate.class)
+    @Size(min = 4, message = "Пароль должен содержать минимум 4 символа", groups = OnCreate.class)
+    String password
+) {}

@@ -1,19 +1,24 @@
 package edu.example.core.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-
-import org.hibernate.annotations.CreationTimestamp;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class User {
 
     @Id
@@ -26,50 +31,37 @@ public class User {
 
     private Integer age;
 
-    @CreationTimestamp
-    private LocalDateTime created_at;
+    @Column(nullable = false)
+    private String password;
 
-    public User() {}
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Convert(converter = RoleListConverter.class)
+    @Column(columnDefinition = "jsonb")
+    private List<UserRole> roles = new ArrayList<>();
 
-    public User(String name, String email) {
-        this(name, email, null);
-    }
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    public User(String name, String email, Integer age) {
+    public User(
+    String name, String email, Integer age,
+    String password, List<UserRole> roles) {
         this.name = name;
         this.email = email;
         this.age = age;
+        this.password = password;
+        this.roles = roles != null ? roles : new ArrayList<>();
     }
 
-    public Long getId() {
-        return id;
+    public User(String name, String email, Integer age, String password) {
+        this(name, email, age, password, null);
     }
 
-    public String getName() {
-        return name;
+    public User(String name, String email, String password) {
+        this(name, email, null, password, null);
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
-    public LocalDateTime getCreated_at() {
-        return created_at;
+    public boolean hasRole(UserRole role) {
+        return roles != null && roles.contains(role);
     }
 }
